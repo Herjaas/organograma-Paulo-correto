@@ -218,7 +218,7 @@ export default function App() {
         setRows(newRows);
         setOrg(buildOrg(newRows));
         const exp = {};
-        newRows.forEach((r) => (exp[slug(r.lider)] = True));
+        newRows.forEach((r) => (exp[slug(r.lider)] = true));
         setExpanded(exp);
       })
       .catch(() => console.warn("Falha ao carregar CSV inicial"));
