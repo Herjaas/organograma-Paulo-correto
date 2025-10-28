@@ -89,7 +89,7 @@ function KPICard({ label, value, helper }) {
   );
 }
 
-function LeadersRow({ org, expanded, setExpanded, onPick }) {
+function LeadersRow({ org, expanded, onLeaderClick, onPick, leaderPicked }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -103,50 +103,61 @@ function LeadersRow({ org, expanded, setExpanded, onPick }) {
       <div className="relative pt-2">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-black/15 dark:bg-white/20" />
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {org.filhos?.map((leader) => (
-            <div key={leader.id} className="relative">
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-[2px] h-2 bg-black/15 dark:bg-white/20" />
-              <div className="card p-3">
-                <button
-                  className="w-full flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  onClick={() => setExpanded((e) => ({ ...e, [leader.id]: !e[leader.id] }))}
-                >
-                  {expanded[leader.id] ? <IconChevronDown /> : <IconChevronRight />}
-                  <IconUsers />
-                  <div>
-                    <div className="text-sm font-medium leading-tight">{leader.nome}</div>
-                    <div className="text-xs muted">{leader.cargo || "Supervisor Regional"}</div>
-                  </div>
-                </button>
-                {expanded[leader.id] && (
-                  <div className="mt-2 space-y-1 relative pl-[18px]">
-                    <div className="absolute left-[8px] top-0 bottom-0 w-[2px] bg-black/10 dark:bg-white/20" />
-                    {leader.filhos?.map((op) => (
-                      <button
-                        key={op.id}
-                        className="relative w-full flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                        onClick={() => onPick(op)}
-                      >
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[10px] h-[2px] bg-black/10 dark:bg-white/20" />
-                        <IconFactory />
-                        <div>
-                          <div className="text-sm font-medium leading-tight">{op.nome}</div>
-                          <div className="text-xs muted">{op.cargo || "Operação"}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+          {org.filhos?.map((leader) => {
+            const isActiveLeader = leaderPicked === leader.nome;
+            return (
+              <div key={leader.id} className="relative">
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-[2px] h-2 bg-black/15 dark:bg-white/20" />
+                <div className="card p-3">
+                  <button
+                    className={`w-full flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors ${
+                      isActiveLeader
+                        ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                        : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    }`}
+                    onClick={() => onLeaderClick?.(leader)}
+                  >
+                    {expanded[leader.id] ? <IconChevronDown /> : <IconChevronRight />}
+                    <IconUsers />
+                    <div>
+                      <div className="text-sm font-medium leading-tight">{leader.nome}</div>
+                      <div className="text-xs muted">{leader.cargo || "Supervisor Regional"}</div>
+                    </div>
+                  </button>
+                  {expanded[leader.id] && (
+                    <div className="mt-2 space-y-1 relative pl-[18px]">
+                      <div className="absolute left-[8px] top-0 bottom-0 w-[2px] bg-black/10 dark:bg-white/20" />
+                      {leader.filhos?.map((op) => (
+                        <button
+                          key={op.id}
+                          className={`relative w-full flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors ${
+                            isActiveLeader
+                              ? "bg-neutral-900/10 dark:bg-neutral-100/10"
+                              : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          }`}
+                          onClick={() => onPick(op)}
+                        >
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[10px] h-[2px] bg-black/10 dark:bg-white/20" />
+                          <IconFactory />
+                          <div>
+                            <div className="text-sm font-medium leading-tight">{op.nome}</div>
+                            <div className="text-xs muted">{op.cargo || "Operação"}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-function SimpleBarChart({ data, xKey, yKey }) {
+function SimpleBarChart({ data, xKey, yKey, color = "currentColor", formatter = (v) => v }) {
   if (!data || data.length === 0) return null;
   const W = 800, H = 280, PAD = 32;
   const labels = data.map((d) => d[xKey]);
@@ -163,8 +174,8 @@ function SimpleBarChart({ data, xKey, yKey }) {
         const y = H - PAD - h;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={bw * 0.7} height={h} fill="currentColor" opacity="0.6" />
-            <title>{labels[i]} — {toBRL(v)}</title>
+            <rect x={x} y={y} width={bw * 0.7} height={h} fill={color} opacity="0.6" />
+            <title>{labels[i]} — {formatter(v)}</title>
           </g>
         );
       })}
@@ -194,6 +205,12 @@ const MOCK_ROWS = [
   { lider: "Juvenil Oliveira", operacao: "BRF - Mineiros", faturamento: 158000, maoDeObra: 45000, equipamentos: 23, ano: 2025, mes: 9, opId: "op-mineiros", tecnicos: 2, auxiliares: 1 },
 ];
 
+const VIEW_TABS = [
+  { id: "tabela", label: "Tabela de operações" },
+  { id: "faturamento", label: "Faturamento mensal" },
+  { id: "mao", label: "Mão de obra mensal" },
+];
+
 export default function App() {
   const [rows, setRows] = useState(MOCK_ROWS);
   const [org, setOrg] = useState(buildOrg(MOCK_ROWS));
@@ -205,6 +222,17 @@ export default function App() {
   const [csvText, setCsvText] = useState("");
   const [csvURL, setCsvURL] = useState("");
   const [tab, setTab] = useState("tabela");
+  const leaderLabel = leaderPicked || "Todos os líderes";
+
+  function applyParsedRows(parsed) {
+    setRows(parsed);
+    setOrg(buildOrg(parsed));
+    const exp = {};
+    parsed.forEach((r) => (exp[slug(r.lider)] = true));
+    setExpanded(exp);
+    setLeaderPicked(null);
+    setTab("tabela");
+  }
 
   useEffect(() => {
     try { runParserTests(); } catch {}
@@ -215,14 +243,17 @@ export default function App() {
       .then((r) => r.text())
       .then((txt) => {
         const newRows = parseCSV(txt);
-        setRows(newRows);
-        setOrg(buildOrg(newRows));
-        const exp = {};
-        newRows.forEach((r) => (exp[slug(r.lider)] = true));
-        setExpanded(exp);
+        applyParsedRows(newRows);
       })
       .catch(() => console.warn("Falha ao carregar CSV inicial"));
   }, []);
+
+  useEffect(() => {
+    if (!leaderPicked) return;
+    if (!rows.some((r) => r.lider === leaderPicked)) {
+      setLeaderPicked(null);
+    }
+  }, [rows, leaderPicked]);
 
   const filtered = useMemo(() => {
     let r = rows.slice();
@@ -241,17 +272,45 @@ export default function App() {
     return { totalFat, totalMO, totalEq, totalTeam };
   }, [filtered]);
 
+  const monthly = useMemo(() => {
+    const map = new Map();
+    filtered.forEach((r) => {
+      const month = String(r.mes || 0).padStart(2, "0");
+      const key = `${r.ano || 0}-${month}`;
+      if (!map.has(key)) {
+        map.set(key, { label: `${month}/${r.ano || ""}`, faturamento: 0, maoDeObra: 0 });
+      }
+      const item = map.get(key);
+      item.faturamento += Number(r.faturamento) || 0;
+      item.maoDeObra += Number(r.maoDeObra) || 0;
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([, value]) => value);
+  }, [filtered]);
+
   function onPick(op) {
     const row = rows.find((r) => r.opId === op.id || r.operacao === op.nome);
-    if (row) setLeaderPicked(row.lider);
+    if (row) {
+      setLeaderPicked(row.lider);
+      setExpanded((prev) => ({ ...prev, [slug(row.lider)]: true }));
+      setTab("tabela");
+    }
+  }
+
+  function handleLeaderClick(leader) {
+    setExpanded((prev) => ({ ...prev, [leader.id]: !prev[leader.id] }));
+    setLeaderPicked((current) => {
+      const same = current === leader.nome;
+      return same ? null : leader.nome;
+    });
+    setTab("tabela");
   }
 
   function importarCSV() {
     try {
       const parsed = parseCSV(csvText);
-      setRows(parsed);
-      setOrg(buildOrg(parsed));
-      const exp = {}; parsed.forEach((r) => (exp[slug(r.lider)] = true)); setExpanded(exp);
+      applyParsedRows(parsed);
       setModalCSV(false);
       alert(`CSV importado: ${parsed.length} linhas`);
     } catch (e) {
@@ -265,9 +324,7 @@ export default function App() {
       .then((r) => r.text())
       .then((txt) => {
         const parsed = parseCSV(txt);
-        setRows(parsed);
-        setOrg(buildOrg(parsed));
-        const exp = {}; parsed.forEach((r) => (exp[slug(r.lider)] = true)); setExpanded(exp);
+        applyParsedRows(parsed);
         localStorage.setItem("csv_url", csvURL);
         setModalURL(false);
         alert(`Conectado! Linhas: ${parsed.length}`);
@@ -299,7 +356,13 @@ export default function App() {
                 <div className="text-sm muted">Organograma</div>
               </div>
               <div className="border-t border-neutral-200 dark:border-neutral-800" />
-              <LeadersRow org={org} expanded={expanded} setExpanded={setExpanded} onPick={onPick} />
+              <LeadersRow
+                org={org}
+                expanded={expanded}
+                onLeaderClick={handleLeaderClick}
+                onPick={onPick}
+                leaderPicked={leaderPicked}
+              />
             </div>
           </div>
 
@@ -309,8 +372,19 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <div>
                     <div className="text-sm muted">Líder selecionado</div>
-                    <div className="text-lg font-semibold">{leaderPicked || "—"}</div>
+                    <div className="text-lg font-semibold">{leaderLabel}</div>
                   </div>
+                  {leaderPicked ? (
+                    <button
+                      className="btn text-xs h-8"
+                      onClick={() => {
+                        setLeaderPicked(null);
+                        setTab("tabela");
+                      }}
+                    >
+                      Limpar seleção
+                    </button>
+                  ) : null}
                 </div>
                 <span className="badge">{filtered.length} operações</span>
               </div>
@@ -338,35 +412,75 @@ export default function App() {
                 <KPICard label="Equipe (total pessoas)" value={kpis.totalTeam} />
               </div>
 
-              <div className="overflow-auto rounded-xl border">
-                <table className="w-full text-sm">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800">
-                    <tr className="text-left">
-                      <th className="p-3">Operação</th>
-                      <th className="p-3">Faturamento</th>
-                      <th className="p-3">Mão de Obra (R$)</th>
-                      <th className="p-3">Equipamentos</th>
-                      <th className="p-3">Equipe (T/A)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r) => (
-                      <tr key={r.opId} className="border-t">
-                        <td className="p-3 font-medium">{r.operacao}</td>
-                        <td className="p-3">{toBRL(r.faturamento)}</td>
-                        <td className="p-3">{toBRL(r.maoDeObra)}</td>
-                        <td className="p-3">{r.equipamentos}</td>
-                        <td className="p-3">{r.tecnicos || 0} T / {r.auxiliares || 0} A</td>
-                      </tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr>
-                        <td className="p-6 text-center muted" colSpan={5}>Nenhuma operação encontrada com os filtros atuais.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="flex flex-wrap gap-2">
+                {VIEW_TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    className={`btn text-xs ${
+                      tab === t.id
+                        ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                        : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    }`}
+                    onClick={() => setTab(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
+
+              {tab === "tabela" && (
+                <div className="overflow-auto rounded-xl border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800">
+                      <tr className="text-left">
+                        <th className="p-3">Operação</th>
+                        <th className="p-3">Faturamento</th>
+                        <th className="p-3">Mão de Obra (R$)</th>
+                        <th className="p-3">Equipamentos</th>
+                        <th className="p-3">Equipe (T/A)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((r) => (
+                        <tr key={r.opId} className="border-t">
+                          <td className="p-3 font-medium">{r.operacao}</td>
+                          <td className="p-3">{toBRL(r.faturamento)}</td>
+                          <td className="p-3">{toBRL(r.maoDeObra)}</td>
+                          <td className="p-3">{r.equipamentos}</td>
+                          <td className="p-3">{r.tecnicos || 0} T / {r.auxiliares || 0} A</td>
+                        </tr>
+                      ))}
+                      {filtered.length === 0 && (
+                        <tr>
+                          <td className="p-6 text-center muted" colSpan={5}>
+                            Nenhuma operação encontrada com os filtros atuais.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {tab === "faturamento" && (
+                <div className="rounded-xl border p-4">
+                  {monthly.length ? (
+                    <SimpleBarChart data={monthly} xKey="label" yKey="faturamento" formatter={toBRL} color="#1d4ed8" />
+                  ) : (
+                    <div className="text-sm muted text-center">Sem dados de faturamento para o filtro atual.</div>
+                  )}
+                </div>
+              )}
+
+              {tab === "mao" && (
+                <div className="rounded-xl border p-4">
+                  {monthly.length ? (
+                    <SimpleBarChart data={monthly} xKey="label" yKey="maoDeObra" formatter={toBRL} color="#047857" />
+                  ) : (
+                    <div className="text-sm muted text-center">Sem dados de mão de obra para o filtro atual.</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -384,21 +498,7 @@ export default function App() {
               <input className="input" value={csvURL} onChange={(e) => setCsvURL(e.target.value)} placeholder="https://docs.google.com/spreadsheets/.../export?format=csv" />
               <div className="flex justify-end gap-2">
                 <button className="btn" onClick={() => setCsvURL("")}>Limpar</button>
-                <button className="btn-primary" onClick={() => {
-                  if (!csvURL) return alert("Informe a URL do CSV");
-                  fetch(csvURL)
-                    .then((r) => r.text())
-                    .then((txt) => {
-                      const parsed = parseCSV(txt);
-                      setRows(parsed);
-                      setOrg(buildOrg(parsed));
-                      const exp = {}; parsed.forEach((r) => (exp[slug(r.lider)] = true)); setExpanded(exp);
-                      localStorage.setItem("csv_url", csvURL);
-                      setModalURL(false);
-                      alert(`Conectado! Linhas: ${parsed.length}`);
-                    })
-                    .catch(() => alert("Não foi possível carregar a URL. Verifique se o CSV é público."));
-                }}>Conectar</button>
+                <button className="btn-primary" onClick={conectarURL}>Conectar</button>
               </div>
             </div>
           </div>
@@ -417,18 +517,7 @@ export default function App() {
               <textarea className="input h-56 font-mono text-xs" value={csvText} onChange={(e) => setCsvText(e.target.value)} placeholder={`Lider,Operacao,Faturamento,MaoDeObra,Equipamentos,Ano,Mes,Tecnicos,Auxiliares\nJhonny Carlos,BRF - Carambeí,185000,52000,28,2025,9,1,1\nClenildo Candeias,BRF CD - Ap. Goiânia,109000,31000,14,2025,9,1,1`} />
               <div className="flex justify-end gap-2">
                 <button className="btn" onClick={() => setCsvText("")}>Limpar</button>
-                <button className="btn-primary" onClick={() => {
-                  try {
-                    const parsed = parseCSV(csvText);
-                    setRows(parsed);
-                    setOrg(buildOrg(parsed));
-                    const exp = {}; parsed.forEach((r) => (exp[slug(r.lider)] = true)); setExpanded(exp);
-                    setModalCSV(false);
-                    alert(`CSV importado: ${parsed.length} linhas`);
-                  } catch (e) {
-                    alert((e && e.message) || "Falha ao importar CSV");
-                  }
-                }}>Importar</button>
+                <button className="btn-primary" onClick={importarCSV}>Importar</button>
               </div>
             </div>
           </div>
